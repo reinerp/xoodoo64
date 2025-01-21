@@ -1986,6 +1986,8 @@ unsafe fn xoodoo64_aarch64_sha3_x4(state: &mut [u8; 192]) {
     }
 }
 
+const CLOCK_FREQ: f64 = 3.5e9; // According to Wikipedia
+
 #[inline(never)]
 fn benchmark<const N: usize>(name: &str, parallelism: usize, f: impl Fn(&mut [u8; N])) {
     const ITERS: usize = 10_000_000;
@@ -2009,16 +2011,18 @@ fn benchmark<const N: usize>(name: &str, parallelism: usize, f: impl Fn(&mut [u8
     }
     let elapsed = start.elapsed();
     let throughput = elapsed.as_nanos() as f64 / (parallelism * ITERS) as f64;
+    let throughput_cpb = (elapsed.as_secs_f64() * CLOCK_FREQ) / (parallelism * ITERS * 48) as f64;
     println!(
-        "{:<30} {:>16.1} {:4}x {:16.1}",
-        name, latency, parallelism, throughput
+        "{:<30} {:>16.1} {:4}x {:16.1} {:>16.2}",
+        name, latency, parallelism, throughput, throughput_cpb
     );
 }
 
 fn main() {
+    println!("Assuming CPU frequency is {:.1} GHz", CLOCK_FREQ / 1e9);
     println!(
-        "{:<30} {:>16}  {:>4} {:>16}",
-        "name", "latency (ns)", "par", "throughput (ns)"
+        "{:<30} {:>16}  {:>4} {:>16} {:>16}",
+        "name", "latency (ns)", "par", "throughput (ns)", "throughput (cpb)"
     );
     benchmark("xoodoo_scalar", 1, xoodoo_scalar);
     benchmark("xoodoo_scalar_x2", 2, xoodoo_scalar_x2);
@@ -2026,25 +2030,23 @@ fn main() {
     benchmark("xoodoo64_scalar", 1, xoodoo64_scalar);
     benchmark("xoodoo64_scalar_x2", 2, xoodoo64_scalar_x2);
     benchmark("xoodoo64_scalar_x4", 4, xoodoo64_scalar_x4);
-    benchmark("xoodoo_aarch64", 1, xoodoo_aarch64);
-    benchmark("xoodoo_aarch64_x2", 2, xoodoo_aarch64_x2);
-    benchmark("xoodoo_aarch64_x4", 4, xoodoo_aarch64_x4);
-    benchmark("xoodoo_aarch64_sha3", 1, |x| unsafe {
-        xoodoo_aarch64_sha3(x)
-    });
-    benchmark("xoodoo_aarch64_sha3_x2", 2, |x| unsafe {
+    benchmark("xoodoo_neon", 1, xoodoo_aarch64);
+    benchmark("xoodoo_neon_x2", 2, xoodoo_aarch64_x2);
+    benchmark("xoodoo_neon_x4", 4, xoodoo_aarch64_x4);
+    benchmark("xoodoo_neon_sha3", 1, |x| unsafe { xoodoo_aarch64_sha3(x) });
+    benchmark("xoodoo_neon_sha3_x2", 2, |x| unsafe {
         xoodoo_aarch64_sha3_x2(x)
     });
-    benchmark("xoodoo_aarch64_sha3_x4", 4, |x| unsafe {
+    benchmark("xoodoo_neon_sha3_x4", 4, |x| unsafe {
         xoodoo_aarch64_sha3_x4(x)
     });
-    benchmark("xoodoo64_aarch64_sha3", 1, |x| unsafe {
+    benchmark("xoodoo64_neon_sha3", 1, |x| unsafe {
         xoodoo64_aarch64_sha3(x)
     });
-    benchmark("xoodoo64_aarch64_sha3_x2", 2, |x| unsafe {
+    benchmark("xoodoo64_neon_sha3_x2", 2, |x| unsafe {
         xoodoo64_aarch64_sha3_x2(x)
     });
-    benchmark("xoodoo64_aarch64_sha3_x4", 4, |x| unsafe {
+    benchmark("xoodoo64_neon_sha3_x4", 4, |x| unsafe {
         xoodoo64_aarch64_sha3_x4(x)
     });
 }
