@@ -19,6 +19,8 @@ Given a benchmark name like `xoodoo64_neon_sha3_x4` this means:
 * The instruction set used is either `scalar` (not using any SIMD instructions), `neon` (using NEON instructions but not SHA3 instructions), or `neon_sha3` (using NEON instructions plus SHA3 extensions).
 * The parallelism is either the empty string (only one instance of the permutation), or `_x2` (2 parallel instances of the permutation) or `_x4` (4 parallel instances of the permutation)
 
+In all cases I benchmark the 12-round permutation, i.e. as in Xoodyak rather than Xoofff.
+
 ### Throughput case
 The relevant subset of results for the highly parallel throughput-sensitive case, as in e.g. Xoofff:
 
